@@ -51,7 +51,18 @@ class DataStorage:
         with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
-            writer.writerows(data)
+            
+            # Convert data to match fieldnames
+            for item in data:
+                row = {}
+                for field in fieldnames:
+                    if field.lower() == 'name':
+                        row[field] = item.get('name', '')
+                    elif field.lower() == 'phone':
+                        row[field] = item.get('phone', '')
+                    elif field.lower() == 'url':
+                        row[field] = item.get('url', '')
+                writer.writerow(row)
     
     def _validate_agent_data(self, data: Dict[str, str]) -> bool:
         """Validate agent data."""
