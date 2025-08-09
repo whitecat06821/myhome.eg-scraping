@@ -150,8 +150,72 @@ class MyHomeFetcher:
     
     def fetch_property_listings(self, page: int = 1) -> Optional[str]:
         """Fetch property listings page"""
-        url = f"https://www.myhome.ge/pr/?page={page}"
+        # Use rental properties URL since we want owner phone numbers
+        url = f"https://www.myhome.ge/pr/rent/?page={page}"
         return self.fetch_page(url)
+    
+    def fetch_property_phone_api(self, statement_uuid: str) -> Optional[Dict[str, Any]]:
+        """Fetch property phone number from API using statement UUID"""
+        try:
+            url = f"{self.base_url}/statements/phone/show?statement_uuid={statement_uuid}"
+            
+            logger.info(f"Fetching property phone from API: {statement_uuid}")
+            self._rate_limit()
+            
+            # Send empty JSON body as per the network analysis
+            response = self.session.post(url, json={}, headers=self.headers, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            logger.info(f"Successfully fetched property phone for {statement_uuid}")
+            return data
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching property phone API {statement_uuid}: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error fetching property phone API {statement_uuid}: {e}")
+            return None
+
+    def fetch_property_listings_api(self, page: int = 1, endpoint: str = "/statements") -> Optional[Dict[str, Any]]:
+        """Fetch property listings from various API endpoints"""
+        try:
+            # Handle both full endpoints and partial ones
+            if endpoint.startswith('/'):
+                url = f"{self.base_url}{endpoint}"
+            else:
+                url = f"{self.base_url}/{endpoint}"
+            
+            params = {'page': page, 'limit': 50}
+            
+            # Parse existing query parameters from endpoint
+            if '?' in endpoint:
+                base_endpoint, query_string = endpoint.split('?', 1)
+                url = f"{self.base_url}{base_endpoint}"
+                # Parse query parameters
+                query_params = {}
+                for param in query_string.split('&'):
+                    if '=' in param:
+                        key, value = param.split('=', 1)
+                        query_params[key] = value
+                params.update(query_params)
+            
+            logger.info(f"Fetching property listings from API: {endpoint} page {page}")
+            self._rate_limit()
+            
+            response = self.session.get(url, params=params, headers=self.headers, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            logger.info(f"Successfully fetched property listings for {endpoint} page {page}")
+            return data
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching property listings API {endpoint} page {page}: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error fetching property listings API {endpoint} page {page}: {e}")
+            return None
     
     def close(self):
         """Close the session"""

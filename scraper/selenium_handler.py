@@ -115,3 +115,87 @@ class SeleniumHandler:
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+    def get_property_phone_with_selenium(self, property_url: str) -> Optional[str]:
+        """Get property phone number using Selenium by clicking show number button"""
+        try:
+            logger.info(f"Getting property phone with Selenium: {property_url}")
+            
+            # Navigate to property page
+            self.driver.get(property_url)
+            time.sleep(3)  # Wait for page to load
+            
+            # Look for the "Show number" button
+            show_number_selectors = [
+                'button[class*="show"]',
+                'button[class*="phone"]',
+                'button[class*="number"]',
+                '[class*="show-number"]',
+                '[class*="phone-button"]',
+                'button:contains("Show")',
+                'button:contains("Phone")',
+                'button:contains("Number")'
+            ]
+            
+            show_button = None
+            for selector in show_number_selectors:
+                try:
+                    show_button = self.driver.find_element(By.CSS_SELECTOR, selector)
+                    if show_button and show_button.is_displayed():
+                        logger.info(f"Found show number button with selector: {selector}")
+                        break
+                except:
+                    continue
+            
+            if not show_button:
+                logger.warning("Could not find show number button")
+                return None
+            
+            # Click the show number button
+            show_button.click()
+            logger.info("Clicked show number button")
+            time.sleep(2)  # Wait for phone to appear
+            
+            # Try to get phone from localStorage
+            try:
+                phone_numbers = self.driver.execute_script("return localStorage.getItem('phoneNumbers');")
+                if phone_numbers:
+                    import json
+                    phones = json.loads(phone_numbers)
+                    if phones and len(phones) > 0:
+                        phone = phones[0]  # Get first phone number
+                        logger.info(f"Found phone in localStorage: {phone}")
+                        return phone
+            except Exception as e:
+                logger.warning(f"Could not get phone from localStorage: {e}")
+            
+            # Fallback: look for phone number in the page content
+            page_source = self.driver.page_source
+            phone_patterns = [
+                r'\+995\s*\d{3}\s*\d{3}\s*\d{3}',
+                r'995\s*\d{3}\s*\d{3}\s*\d{3}',
+                r'\d{3}\s*\d{3}\s*\d{3}',
+                r'\d{9}',
+            ]
+            
+            for pattern in phone_patterns:
+                import re
+                matches = re.findall(pattern, page_source)
+                for match in matches:
+                    # Clean and validate phone number
+                    digits = re.sub(r'\D', '', match)
+                    if len(digits) == 9 and digits.startswith('5'):
+                        phone = f"+995{digits}"
+                        logger.info(f"Found phone in page content: {phone}")
+                        return phone
+                    elif len(digits) == 12 and digits.startswith('995'):
+                        phone = f"+{digits}"
+                        logger.info(f"Found phone in page content: {phone}")
+                        return phone
+            
+            logger.warning("No phone number found after clicking show number button")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting property phone with Selenium: {e}")
+            return None

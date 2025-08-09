@@ -522,3 +522,140 @@ class MyHomeParser:
             return ""
         text = element.get_text()
         return self._clean_text(text)
+
+    def parse_property_phone_api_response(self, api_data: Dict[str, Any]) -> Optional[str]:
+        """Parse the API response to extract phone number"""
+        try:
+            if not api_data:
+                logger.warning("No data found in property phone API response")
+                return None
+            
+            # Handle the API response structure: {"result": true, "data": {"phone_number": "..."}}
+            if isinstance(api_data, dict) and 'result' in api_data and api_data['result']:
+                data = api_data.get('data', {})
+                if isinstance(data, dict) and 'phone_number' in data:
+                    phone = data['phone_number']
+                    logger.info(f"Found phone number in API response: {phone}")
+                    
+                    # Clean and validate phone number
+                    phone = self._clean_phone(phone)
+                    if self._is_valid_phone(phone):
+                        return phone
+                    else:
+                        logger.warning(f"Invalid phone number from API: {phone}")
+                        return None
+            
+            logger.warning(f"Unexpected property phone API response structure: {type(api_data)}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error parsing property phone API response: {e}")
+            return None
+
+    def extract_statement_uuid_from_url(self, property_url: str, fetcher=None) -> Optional[str]:
+        """Extract statement UUID from property URL by fetching the page first"""
+        try:
+            # First, fetch the property page to get the statement UUID
+            if not fetcher:
+                logger.warning("Fetcher not provided, cannot extract statement UUID")
+                return None
+            
+            html_content = fetcher.fetch_page(property_url)
+            if not html_content:
+                logger.error(f"Failed to fetch property page: {property_url}")
+                return None
+            
+            # Look for UUID pattern in the page content
+            import re
+            
+            # Pattern for UUID: 8bba42bb-1077-42bc-af89-d242b70a632a
+            uuid_pattern = r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+            matches = re.findall(uuid_pattern, html_content, re.IGNORECASE)
+            
+            if matches:
+                # Use the first UUID found (usually the statement UUID)
+                statement_uuid = matches[0]
+                logger.info(f"Found statement UUID: {statement_uuid}")
+                return statement_uuid
+            
+            # Also look for statementId pattern as fallback
+            statement_id_pattern = r'"statementId":"(\d+)"'
+            match = re.search(statement_id_pattern, html_content)
+            
+            if match:
+                statement_id = match.group(1)
+                logger.info(f"Found statement ID (fallback): {statement_id}")
+                return statement_id
+            
+            # Final fallback: extract from URL
+            url_match = re.search(r'/pr/(\d+)/', property_url)
+            if url_match:
+                property_id = url_match.group(1)
+                logger.info(f"Using property ID as statement ID (fallback): {property_id}")
+                return property_id
+            
+            logger.warning(f"No statement UUID found in property page: {property_url}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error extracting statement UUID from URL {property_url}: {e}")
+            return None
+
+    def parse_property_listings_api_response(self, api_data: Dict[str, Any]) -> List[Dict[str, str]]:
+        """Parse the API response to extract property information"""
+        properties = []
+        
+        try:
+            if not api_data:
+                logger.warning("No data found in property listings API response")
+                return properties
+            
+            # Handle the API response structure
+            if isinstance(api_data, dict) and 'result' in api_data and api_data['result']:
+                data = api_data.get('data', {})
+                if isinstance(data, dict) and 'data' in data:
+                    property_list = data['data']
+                    logger.info(f"Found {len(property_list)} properties in API response")
+                    
+                    for property_item in property_list:
+                        try:
+                            property_info = self._extract_property_from_api(property_item)
+                            if property_info:
+                                properties.append(property_info)
+                        except Exception as e:
+                            logger.error(f"Error parsing property from API: {e}")
+                            continue
+                    
+                    logger.info(f"Successfully parsed {len(properties)} properties from API")
+                    return properties
+            
+            logger.warning(f"Unexpected property listings API response structure: {type(api_data)}")
+            return properties
+            
+        except Exception as e:
+            logger.error(f"Error parsing property listings API response: {e}")
+            return properties
+
+    def _extract_property_from_api(self, property_data: Dict[str, Any]) -> Optional[Dict[str, str]]:
+        """Extract property information from API data structure"""
+        try:
+            # Extract basic information
+            property_id = str(property_data.get('id', ''))
+            uuid = property_data.get('uuid', '')
+            
+            if not property_id or not uuid:
+                logger.debug(f"Missing ID or UUID for property")
+                return None
+            
+            # Create property URL
+            property_url = f"https://www.myhome.ge/pr/{property_id}/"
+            
+            return {
+                'id': property_id,
+                'uuid': uuid,
+                'url': property_url
+            }
+            
+        except Exception as e:
+            logger.error(f"Error extracting property from API data: {e}")
+            return None

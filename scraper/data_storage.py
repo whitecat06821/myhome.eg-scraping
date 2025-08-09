@@ -13,6 +13,7 @@ class DataStorage:
         """Initialize data storage."""
         self.agents_data = []
         self.owners_data = []
+        self.owner_phones = set()
     
     def add_agent(self, agent_data: Dict[str, str]):
         """Add agent data to storage."""
@@ -26,25 +27,57 @@ class DataStorage:
             self.owners_data.append(owner_data)
             logger.debug(f"Added owner: {owner_data.get('name', 'Unknown')}")
     
-    def export_to_csv(self, agents_file: str = "agents.csv", owners_file: str = "owners.csv"):
-        """Export data to CSV files."""
+    def add_owner_phone(self, phone: str):
+        """Add owner phone number (phone only, no name/URL needed)"""
         try:
-            # Export agents data
+            if phone and phone not in self.owner_phones:
+                self.owner_phones.add(phone)
+                self.owners_data.append({
+                    'name': 'Property Owner',
+                    'phone': phone,
+                    'url': ''
+                })
+                logger.info(f"Added owner phone: {phone}")
+            else:
+                logger.debug(f"Phone number already exists or invalid: {phone}")
+        except Exception as e:
+            logger.error(f"Error adding owner phone {phone}: {e}")
+
+    def get_owner_phones_count(self) -> int:
+        """Get count of unique owner phone numbers"""
+        return len(self.owner_phones)
+    
+    def export_to_csv(self, agents_file: str = "agents.csv", owners_file: str = "owners.csv"):
+        """Export data to CSV files with only Phone column."""
+        try:
+            # Export agents data (only phone numbers)
             if self.agents_data:
-                self._write_csv(agents_file, self.agents_data, ['Name', 'Phone', 'URL'])
+                self._write_csv_phone_only(agents_file, self.agents_data)
                 logger.info(f"Exported {len(self.agents_data)} agents to {agents_file}")
             else:
                 logger.warning("No agent data to export")
             
-            # Export owners data
+            # Export owners data (only phone numbers)
             if self.owners_data:
-                self._write_csv(owners_file, self.owners_data, ['Name', 'Phone', 'URL'])
+                self._write_csv_phone_only(owners_file, self.owners_data)
                 logger.info(f"Exported {len(self.owners_data)} owners to {owners_file}")
             else:
                 logger.warning("No owner data to export")
                 
         except Exception as e:
             logger.error(f"Error exporting to CSV: {e}")
+    
+    def _write_csv_phone_only(self, filename: str, data: List[Dict]):
+        """Write data to CSV file with only Phone column."""
+        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['Phone'])  # Header
+            
+            # Write only phone numbers
+            for item in data:
+                phone = item.get('phone', '')
+                if phone:
+                    writer.writerow([phone])
     
     def _write_csv(self, filename: str, data: List[Dict], fieldnames: List[str]):
         """Write data to CSV file."""

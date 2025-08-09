@@ -3,6 +3,7 @@
 
 import logging
 import time
+import threading
 from scraper.fetcher import MyHomeFetcher
 from scraper.parser import MyHomeParser
 from scraper.selenium_handler import SeleniumHandler
@@ -20,7 +21,7 @@ def setup_logging():
     )
 
 class MyHomeScraper:
-    def __init__(self, use_api=True, use_selenium=False):
+    def __init__(self, use_api=True, use_selenium=True):
         self.logger = logging.getLogger(__name__)
         self.fetcher = MyHomeFetcher()
         self.parser = MyHomeParser()
@@ -33,7 +34,7 @@ class MyHomeScraper:
             self.selenium_handler.start_driver()
             self.logger.info("Selenium WebDriver started")
     
-    def scrape_agents(self, max_pages=109, target_count=10000):
+    def scrape_agents(self, max_pages=109, target_count=900):
         """Scrape agent data from multiple pages using API until target count is reached"""
         self.logger.info(f"Starting agent scraping... Target: {target_count} agents")
         
@@ -187,8 +188,8 @@ class MyHomeScraper:
         else:
             self.logger.error(f"Failed to load agent detail page: {agent_url}")
     
-    def scrape_properties(self, max_pages=50, target_count=5000):
-        """Scrape property owner data from property listing pages"""
+    def scrape_properties(self, max_pages=50, target_count=900):
+        """Scrape property owner phone numbers using API approach"""
         self.logger.info(f"Starting property owner scraping... Target: {target_count} owners")
         
         total_owners_found = 0
@@ -197,50 +198,53 @@ class MyHomeScraper:
         while page <= max_pages and total_owners_found < target_count:
             self.logger.info(f"Scraping property listings page {page}")
             
-            # Fetch property listings page
-            if self.use_selenium:
-                html_content = self.selenium_handler.get_page_with_phone(f"https://www.myhome.ge/pr/?page={page}")
-            else:
-                html_content = self.fetcher.fetch_property_listings(page)
+            # Fetch property listings from API
+            api_data = self.fetcher.fetch_property_listings_api(page)
             
-            if not html_content:
-                self.logger.error(f"Failed to load property listings page {page}")
+            if not api_data:
+                self.logger.error(f"Failed to fetch property listings API page {page}")
                 break
             
-            # Extract property URLs from the listings page
-            property_urls = self.parser.extract_property_links_from_list(html_content)
+            # Parse property URLs from API response
+            properties = self.parser.parse_property_listings_api_response(api_data)
             
-            if not property_urls:
+            if not properties:
                 self.logger.info(f"No more properties found on page {page}, stopping")
                 break
             
+            self.logger.info(f"Found {len(properties)} properties on page {page}")
+            
             # Scrape each property detail page
-            for property_url in property_urls:
+            for property_info in properties:
                 if total_owners_found >= target_count:
                     self.logger.info(f"Reached target count of {target_count} owners! Stopping...")
                     break
                 
                 try:
+                    property_url = property_info['url']
                     self.logger.info(f"Scraping property: {property_url}")
                     
-                    # Fetch property detail page
-                    if self.use_selenium:
-                        detail_html = self.selenium_handler.get_page_with_phone(property_url)
-                    else:
-                        detail_html = self.fetcher.fetch_property_detail(property_url)
+                    phone = None
                     
-                    if detail_html:
-                        # Parse owner data
-                        owner_data = self.parser.parse_property_detail(detail_html, property_url)
-                        
-                        if owner_data and owner_data.get('name') and owner_data.get('phone'):
-                            self.data_storage.add_owner(owner_data)
-                            total_owners_found += 1
-                            self.logger.info(f"Added owner: {owner_data['name']} - {owner_data['phone']}")
-                        else:
-                            self.logger.debug(f"No valid owner data found for {property_url}")
+                    # Try Selenium approach first since API is not working
+                    if self.use_selenium:
+                        self.logger.info(f"Using Selenium for {property_url}")
+                        phone = self.selenium_handler.get_property_phone_with_selenium(property_url)
+                    
+                    # Fallback to API approach (currently not working)
+                    if not phone:
+                        statement_uuid = self.parser.extract_statement_uuid_from_url(property_url, self.fetcher)
+                        if statement_uuid:
+                            api_data = self.fetcher.fetch_property_phone_api(statement_uuid)
+                            if api_data:
+                                phone = self.parser.parse_property_phone_api_response(api_data)
+                    
+                    if phone:
+                        self.data_storage.add_owner_phone(phone)
+                        total_owners_found += 1
+                        self.logger.info(f"Added owner phone: {phone}")
                     else:
-                        self.logger.warning(f"Failed to load property page: {property_url}")
+                        self.logger.debug(f"No valid phone number found for {property_url}")
                     
                     # Rate limiting
                     time.sleep(1)
@@ -253,16 +257,38 @@ class MyHomeScraper:
         self.logger.info(f"Property owner scraping completed. Total owners processed: {total_owners_found}")
         return total_owners_found
     
-    def run(self):
-        """Run the complete scraping process"""
+    def run_agents_scraping(self):
+        """Run agents scraping in a separate thread"""
         try:
-            self.logger.info("Starting MyHome.ge scraper...")
+            agents_count = self.scrape_agents(max_pages=109, target_count=900)
+            self.logger.info(f"Agents scraping completed: {agents_count} agents found")
+        except Exception as e:
+            self.logger.error(f"Error in agents scraping: {e}")
+    
+    def run_owners_scraping(self):
+        """Run owners scraping in a separate thread"""
+        try:
+            owners_count = self.scrape_properties(max_pages=50, target_count=900)
+            self.logger.info(f"Owners scraping completed: {owners_count} owners found")
+        except Exception as e:
+            self.logger.error(f"Error in owners scraping: {e}")
+    
+    def run(self):
+        """Run both agents and owners scraping simultaneously"""
+        try:
+            self.logger.info("Starting MyHome.ge scraper (agents + owners)...")
             
-            # Scrape agents using API - stop when we reach target count
-            agents_count = self.scrape_agents(max_pages=109, target_count=7000)
+            # Create threads for simultaneous scraping
+            agents_thread = threading.Thread(target=self.run_agents_scraping)
+            owners_thread = threading.Thread(target=self.run_owners_scraping)
             
-            # Scrape property owners to get additional numbers
-            owners_count = self.scrape_properties(max_pages=50, target_count=3000)
+            # Start both threads
+            agents_thread.start()
+            owners_thread.start()
+            
+            # Wait for both threads to complete
+            agents_thread.join()
+            owners_thread.join()
             
             # Export data
             self.data_storage.export_to_csv()
@@ -292,10 +318,10 @@ def main():
     logger = logging.getLogger(__name__)
     
     try:
-        # Create scraper with API enabled (much faster than Selenium)
-        scraper = MyHomeScraper(use_api=True, use_selenium=False)
+        # Create scraper with API enabled for agents, Selenium for owners
+        scraper = MyHomeScraper(use_api=True, use_selenium=True)
         
-        # Run the scraper
+        # Run the scraper (both agents and owners simultaneously)
         scraper.run()
         
     except Exception as e:
