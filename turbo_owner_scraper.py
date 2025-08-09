@@ -33,7 +33,7 @@ class TurboOwnerScraper:
         self.fetcher = MyHomeFetcher()
         self.owner_phones = set()
         self.processed_urls = set()
-        self.target_phones = 8000
+        self.target_phones = 10000  # Increased target for better coverage
         
     def load_existing_phones(self):
         """Load existing phones to avoid duplicates"""
@@ -159,24 +159,37 @@ class TurboOwnerScraper:
             logger.debug(f"Error scraping {property_url}: {e}")
             return None
     
-    def export_turbo_csv(self, filename: str = 'turbo_owners.csv'):
-        """Export unique phones to CSV"""
+    def export_turbo_excel(self, filename: str = 'owners.xlsx'):
+        """Export unique phones to Excel with correct format"""
         try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Alignment
+            
             sorted_phones = sorted(self.owner_phones)
             
-            with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(['Phone'])
-                
-                for phone in sorted_phones:
-                    # Format for Excel: +995 571 233 844
-                    digits = re.sub(r'[^\d]', '', phone)
-                    if len(digits) >= 12:
-                        formatted = f"+995 {digits[3:6]} {digits[6:9]} {digits[9:12]}"
-                    else:
-                        formatted = phone
-                    writer.writerow([formatted])
+            # Create Excel workbook
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Owner Phones"
             
+            # Header
+            ws['A1'] = "Phone"
+            ws['A1'].alignment = Alignment(horizontal='left')
+            
+            # Phone numbers with correct format
+            for i, phone in enumerate(sorted_phones, 2):
+                # Format: +995 571 233 844
+                digits = re.sub(r'[^\d]', '', phone)
+                if len(digits) >= 12:
+                    formatted = f"+995 {digits[3:6]} {digits[6:9]} {digits[9:12]}"
+                else:
+                    formatted = phone
+                
+                ws[f'A{i}'] = formatted
+                ws[f'A{i}'].alignment = Alignment(horizontal='left')
+            
+            # Save Excel file
+            wb.save(filename)
             logger.info(f"✅ Exported {len(sorted_phones)} phones to {filename}")
             return len(sorted_phones)
             
@@ -215,7 +228,7 @@ class TurboOwnerScraper:
                         
                         # Save progress every 100 new phones
                         if new_phones_found % 100 == 0:
-                            self.export_turbo_csv()
+                            self.export_turbo_excel()
                 
                 scraped_count += 1
                 
@@ -236,7 +249,7 @@ class TurboOwnerScraper:
                 continue
         
         # Final export
-        final_count = self.export_turbo_csv()
+        final_count = self.export_turbo_excel()
         
         logger.info(f"🏁 TURBO SCRAPING COMPLETE!")
         logger.info(f"   Final unique phones: {final_count}")
@@ -250,10 +263,10 @@ def main():
     scraper = TurboOwnerScraper()
     result = scraper.turbo_scrape()
     
-    if result >= 8000:
+    if result >= 10000:
         print(f"🎉 SUCCESS: {result} unique phones collected!")
     else:
-        print(f"📊 Collected {result} unique phones (target was 8000)")
+        print(f"📊 Collected {result} unique phones (target was 10000)")
 
 if __name__ == "__main__":
     main()

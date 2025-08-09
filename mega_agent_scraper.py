@@ -32,7 +32,7 @@ class MegaAgentScraper:
         self.parser = MyHomeParser()
         self.agent_phones = set()
         self.processed_agents = set()
-        self.target_phones = 8000
+        self.target_phones = 10000  # Increased target for better coverage
         
     def load_existing_agent_phones(self):
         """Load existing agent phones to avoid duplicates"""
@@ -147,29 +147,42 @@ class MegaAgentScraper:
             logger.debug(f"Error extracting phone from agent: {e}")
             return None
     
-    def export_mega_agents_csv(self, filename: str = 'mega_agents.csv'):
-        """Export unique agent phones to CSV"""
+    def export_mega_agents_excel(self, filename: str = 'agents.xlsx'):
+        """Export unique agent phones to Excel with correct format"""
         try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Alignment
+            
             sorted_phones = sorted(self.agent_phones)
             
-            with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(['Phone'])
-                
-                for phone in sorted_phones:
-                    # Format for Excel: +995 571 233 844
-                    digits = re.sub(r'[^\d]', '', phone)
-                    if len(digits) >= 12:
-                        formatted = f"+995 {digits[3:6]} {digits[6:9]} {digits[9:12]}"
-                    else:
-                        formatted = phone
-                    writer.writerow([formatted])
+            # Create Excel workbook
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Agent Phones"
             
+            # Header
+            ws['A1'] = "Phone"
+            ws['A1'].alignment = Alignment(horizontal='left')
+            
+            # Phone numbers with correct format
+            for i, phone in enumerate(sorted_phones, 2):
+                # Format: +995 571 233 844
+                digits = re.sub(r'[^\d]', '', phone)
+                if len(digits) >= 12:
+                    formatted = f"+995 {digits[3:6]} {digits[6:9]} {digits[9:12]}"
+                else:
+                    formatted = phone
+                
+                ws[f'A{i}'] = formatted
+                ws[f'A{i}'].alignment = Alignment(horizontal='left')
+            
+            # Save Excel file
+            wb.save(filename)
             logger.info(f"✅ Exported {len(sorted_phones)} agent phones to {filename}")
             return len(sorted_phones)
             
         except Exception as e:
-            logger.error(f"Error exporting agent CSV: {e}")
+            logger.error(f"Error exporting agent Excel: {e}")
             return 0
     
     def mega_agent_scrape(self):
@@ -210,7 +223,7 @@ class MegaAgentScraper:
                             
                             # Save progress every 200 new phones
                             if new_phones_found % 200 == 0:
-                                self.export_mega_agents_csv()
+                                self.export_mega_agents_excel()
                 
                 self.processed_agents.add(agent_id)
                 processed_count += 1
@@ -231,7 +244,7 @@ class MegaAgentScraper:
                 continue
         
         # Final export
-        final_count = self.export_mega_agents_csv()
+        final_count = self.export_mega_agents_excel()
         
         logger.info(f"🏁 MEGA AGENT SCRAPING COMPLETE!")
         logger.info(f"   Final unique agent phones: {final_count}")
@@ -245,10 +258,10 @@ def main():
     scraper = MegaAgentScraper()
     result = scraper.mega_agent_scrape()
     
-    if result >= 8000:
+    if result >= 10000:
         print(f"🎉 SUCCESS: {result} unique agent phones collected!")
     else:
-        print(f"📊 Collected {result} unique agent phones (target was 8000)")
+        print(f"📊 Collected {result} unique agent phones (target was 10000)")
 
 if __name__ == "__main__":
     main()

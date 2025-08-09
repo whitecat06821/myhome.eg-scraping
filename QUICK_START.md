@@ -14,32 +14,30 @@ python run_mega_scraper.py
 
 **3. Select option 1 (Full Mega Mode)**
 
-**4. Wait 6-8 hours for 16,000 unique phones! 🎯**
+**4. Wait 6-8 hours for 20,000 unique phones! 🎯**
 
 ---
 
 ## What You Get
 
-✅ **16,000 unique phone numbers**  
-✅ **8,000 agents + 8,000 owners**  
+✅ **20,000 unique phone numbers**  
+✅ **10,000 agents + 10,000 owners**  
 ✅ **Zero duplicates**  
 ✅ **Excel-ready format: `+995 571 233 844`**
 
 ## Files Created
 
-- `master_phones_only.xlsx` - **Final delivery file for client**
-- `mega_agents.csv` - Agent phone numbers
-- `turbo_owners.csv` - Owner phone numbers
-- `master_phones_unique.csv` - All phones with sources
+- `agents.xlsx` - **Agent phone numbers (10,000 target)**
+- `owners.xlsx` - **Owner phone numbers (10,000 target)**
 
 ## Monitoring Progress
 
 The monitor shows real-time progress:
 ```
 🎯 PROGRESS SUMMARY:
-  Unique Agent Phones:  5234 / 8,000  ( 65.4%)
-  Unique Owner Phones:  3891 / 8,000  ( 48.6%)
-  Total Unique Phones:  9125 / 16,000 ( 57.0%)
+  Unique Agent Phones:  5234 / 10,000 ( 52.3%)
+  Unique Owner Phones:  3891 / 10,000 ( 38.9%)
+  Total Unique Phones:  9125 / 20,000 ( 45.6%)
 ```
 
 ## If You Need to Stop and Resume
@@ -65,4 +63,4 @@ The system handles everything automatically:
 - ✅ Formats for Excel
 - ✅ Saves progress continuously
 
-**🎯 Result: 16,000 unique phone numbers in perfect Excel format!**
+**🎯 Result: 20,000 unique phone numbers in perfect Excel format!**

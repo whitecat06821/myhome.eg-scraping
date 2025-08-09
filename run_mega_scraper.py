@@ -16,9 +16,9 @@ def print_banner():
     print("=" * 80)
     print("🚀 MYHOME.GE MEGA PHONE SCRAPER")
     print("=" * 80)
-    print("TARGET: 16,000 UNIQUE PHONE NUMBERS")
-    print("  • 8,000 Agent Phones")
-    print("  • 8,000 Owner Phones") 
+    print("TARGET: 20,000 UNIQUE PHONE NUMBERS")
+    print("  • 10,000 Agent Phones")
+    print("  • 10,000 Owner Phones") 
     print("  • Zero Duplicates")
     print("=" * 80)
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -29,18 +29,22 @@ def check_dependencies():
     print("\n🔍 Checking dependencies...")
     
     required_packages = [
-        'requests', 'beautifulsoup4', 'selenium', 
-        'pandas', 'openpyxl', 'webdriver_manager'
+        ('requests', 'requests'),
+        ('beautifulsoup4', 'bs4'), 
+        ('selenium', 'selenium'),
+        ('pandas', 'pandas'),
+        ('openpyxl', 'openpyxl'),
+        ('webdriver_manager', 'webdriver_manager')
     ]
     
     missing = []
-    for package in required_packages:
+    for display_name, import_name in required_packages:
         try:
-            __import__(package.replace('-', '_'))
-            print(f"  ✅ {package}")
+            __import__(import_name.replace('-', '_'))
+            print(f"  ✅ {display_name}")
         except ImportError:
-            print(f"  ❌ {package}")
-            missing.append(package)
+            print(f"  ❌ {display_name}")
+            missing.append(display_name)
     
     if missing:
         print(f"\n⚠️  Missing packages: {', '.join(missing)}")
@@ -177,21 +181,21 @@ def main():
         print("📋 What's happening:")
         
         if choice == 1:
-            print("  1. Agent scraper collecting 8,000 agent phones")
-            print("  2. Owner scraper collecting 8,000 owner phones") 
+            print("  1. Agent scraper collecting 10,000 agent phones")
+            print("  2. Owner scraper collecting 10,000 owner phones")
             print("  3. Monitor showing real-time progress")
             print("  4. Auto-deduplication preventing duplicates")
             print("\n⏱️  Expected completion: 6-8 hours")
             print("📊 Monitor will show when targets are reached")
         
         elif choice == 2:
-            print("  • Collecting 8,000 unique agent phone numbers")
-            print("  • Progress saved to mega_agents.csv")
+            print("  • Collecting 10,000 unique agent phone numbers")
+            print("  • Progress saved to agents.xlsx")
             print("\n⏱️  Expected completion: 2-4 hours")
         
         elif choice == 3:
-            print("  • Collecting 8,000 unique owner phone numbers")
-            print("  • Progress saved to turbo_owners.csv")
+            print("  • Collecting 10,000 unique owner phone numbers")
+            print("  • Progress saved to owners.xlsx")
             print("\n⏱️  Expected completion: 4-6 hours")
         
         print("\n💡 TIPS:")
@@ -201,7 +205,7 @@ def main():
         print("  • Press Ctrl+C to stop monitoring (scrapers continue)")
         
         print("\n" + "=" * 80)
-        print("🚀 MEGA SCRAPER RUNNING - TARGETING 16,000 UNIQUE PHONES!")
+        print("🚀 MEGA SCRAPER RUNNING - TARGETING 20,000 UNIQUE PHONES!")
         print("=" * 80)
     
     input("\nPress Enter to exit launcher (scrapers continue running)...")
