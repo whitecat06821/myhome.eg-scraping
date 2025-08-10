@@ -1,66 +1,48 @@
-# 🚀 QUICK START GUIDE
+# 🚀 QUICK START GUIDE - MyHome Phone Scraper
 
-## 30-Second Setup
+## 🎯 TARGET
+**20,000 unique phone numbers total:**
+- **10,000 unique agent phones** 
+- **10,000 unique owner phones**
 
-**1. Install dependencies:**
+## 🚀 IMMEDIATE START (Recommended)
+
+### Option 1: Enhanced Scrapers (Best for reaching 10,000 targets)
 ```bash
-pip install -r requirements.txt
+python run_enhanced_scrapers.py
+```
+This runs advanced scrapers with multiple discovery methods to reach the high targets.
+
+### Option 2: Individual Enhanced Scrapers
+```bash
+# For agents (target: 10,000)
+python mega_agent_scraper_enhanced.py
+
+# For owners (target: 10,000)  
+python turbo_owner_scraper_enhanced.py
 ```
 
-**2. Run the mega scraper:**
-```bash
-python run_mega_scraper.py
-```
+## 📊 SUCCESS CRITERIA
+- ✅ **agents.xlsx**: Contains 10,000+ unique agent phone numbers
+- ✅ **owners.xlsx**: Contains 10,000+ unique owner phone numbers
+- ✅ **Total**: 20,000+ unique phone numbers
+- ✅ **Format**: `+995 571 233 844` (with spaces, General cell type)
 
-**3. Select option 1 (Full Mega Mode)**
+## 📁 OUTPUT FILES
+- **agents.xlsx** - Agent phone numbers only
+- **owners.xlsx** - Owner phone numbers only
+- **enhanced_runner.log** - Detailed execution log
 
-**4. Wait 6-8 hours for 20,000 unique phones! 🎯**
+## 🔧 TROUBLESHOOTING
+If you get low numbers (like 800 owners, 2000 agents):
+1. **Use the enhanced scrapers** - they have better discovery methods
+2. **Check logs** for any errors
+3. **Run individual scrapers** to see which one is working better
+
+## 🆘 NEED HELP?
+- Check the logs in the console output
+- Look for error messages
+- The enhanced scrapers should automatically discover many more URLs
 
 ---
-
-## What You Get
-
-✅ **20,000 unique phone numbers**  
-✅ **10,000 agents + 10,000 owners**  
-✅ **Zero duplicates**  
-✅ **Excel-ready format: `+995 571 233 844`**
-
-## Files Created
-
-- `agents.xlsx` - **Agent phone numbers (10,000 target)**
-- `owners.xlsx` - **Owner phone numbers (10,000 target)**
-
-## Monitoring Progress
-
-The monitor shows real-time progress:
-```
-🎯 PROGRESS SUMMARY:
-  Unique Agent Phones:  5234 / 10,000 ( 52.3%)
-  Unique Owner Phones:  3891 / 10,000 ( 38.9%)
-  Total Unique Phones:  9125 / 20,000 ( 45.6%)
-```
-
-## If You Need to Stop and Resume
-
-**Stop:**
-- Close terminal windows or press Ctrl+C
-
-**Resume later:**
-```bash
-python run_mega_scraper.py
-```
-- The system automatically loads existing progress
-- No duplicate work - picks up where it left off
-
-## That's It! 
-
-Just run `python run_mega_scraper.py` and select option 1. 
-
-The system handles everything automatically:
-- ✅ Discovers thousands of properties
-- ✅ Extracts phone numbers  
-- ✅ Removes duplicates
-- ✅ Formats for Excel
-- ✅ Saves progress continuously
-
-**🎯 Result: 20,000 unique phone numbers in perfect Excel format!**
+**Note**: The enhanced scrapers use multiple discovery methods to find significantly more URLs, which should help reach the 10,000 target for each category.
